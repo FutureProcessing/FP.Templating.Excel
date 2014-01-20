@@ -26,12 +26,22 @@
             var workbook = new XLWorkbook(templateStream);
 
             this.RunPipeline(t => t.BeginWorkbookProcess(workbook));
+           
+            foreach (var sheet in workbook.Worksheets)
+            {
+                this.TransformWorksheet(model, sheet); 
+            }
 
-            var sheet = workbook.Worksheets.First();
+            this.RunPipeline(t => t.EndWorkbookProcess(workbook));
 
+            workbook.SaveAs(outputStream);
+        }
+
+        private void TransformWorksheet<TModel>(TModel model, IXLWorksheet sheet)
+        {
             this.RunPipeline(t => t.BeginWorksheetProcess(sheet));
 
-            var state = new TemplateState { Model = model };
+            var state = new TemplateState {Model = model};
 
             var inserTable = new InsertTable();
             var simpleValue = new SimpleValueTransformer();
@@ -67,9 +77,6 @@
             }
 
             this.RunPipeline(t => t.EndWorksheetProcess(sheet));
-            this.RunPipeline(t => t.EndWorkbookProcess(workbook));
-
-            workbook.SaveAs(outputStream);
         }
 
         private void RunPipeline(Action<TemplateTransformer> action)
